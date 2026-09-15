@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Micro-Habit & Streak Visualizer</title>
+  <style>
+    :root {
+      --bg-color: #0d1117;
+      --card-bg: #161b22;
+      --border-color: #30363d;
+      --text-main: #c9d1d9;
+      --text-sub: #8b949e;
+      --color-empty: #161b22;
+      --color-l1: #0e4429;
+      --color-l2: #006d32;
+      --color-l3: #26a641;
+      --color-l4: #39d353;
+      --accent-color: #39d353;
+    }
+
+    /* Color Theme Palettes */
+    [data-theme="emerald"] {
+      --color-empty: #161b22;
+      --color-l1: #0e4429;
+      --color-l2: #006d32;
+      --color-l3: #26a641;
+      --color-l4: #39d353;
+      --accent-color: #39d353;
+    }
+
+    [data-theme="ocean"] {
+      --color-empty: #161b22;
+      --color-l1: #0a304e;
+      --color-l2: #0c4a78;
+      --color-l3: #1172b6;
+      --color-l4: #1d9bf0;
+      --accent-color: #1d9bf0;
+    }
+
+    [data-theme="sunset"] {
+      --color-empty: #161b22;
+      --color-l1: #4c1d24;
+      --color-l2: #80272f;
+      --color-l3: #c84132;
+      --color-l4: #f76841;
+      --accent-color: #f76841;
+    }
+
+    [data-theme="purple"] {
+      --color-empty: #161b22;
+      --color-l1: #2d1b4e;
+      --color-l2: #512b81;
+      --color-l3: #8344ad;
+      --color-l4: #a855f7;
+      --accent-color: #a855f7;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      padding: 2rem 1rem;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 850px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 1rem;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    .theme-selector select {
+      background: var(--card-bg);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .habit-controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 1.5rem;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 0.6rem 1rem;
+      border-radius: 6px;
+      outline: none;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--accent-color);
+    }
+
+    button.btn-add {
+      background: var(--accent-color);
+      color: #000;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    button.btn-add:hover {
+      opacity: 0.9;
+    }
+
+    .habit-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .habit-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .habit-title {
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+
+    .habit-stats {
+      display: flex;
+      gap: 15px;
+      font-size: 0.85rem;
+      color: var(--text-sub);
+    }
+
+    .stat-highlight {
+      color: var(--accent-color);
+      font-weight: bold;
+    }
+
+    .grid-container {
+      overflow-x: auto;
+      padding-bottom: 5px;
+    }
+
+    .contribution-grid {
+      display: grid;
+      grid-template-rows: repeat(7, 12px);
+      grid-auto-flow: column;
+      grid-auto-columns: 12px;
+      gap: 3px;
+    }
+
+    .day-cell {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+      background-color: var(--color-empty);
+      outline: 1px solid rgba(255, 255, 255, 0.03);
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+
+    .day-cell:hover {
+      transform: scale(1.3);
+      z-index: 2;
+    }
+
+    .day-cell[data-level="0"] { background-color: var(--color-empty); }
+    .day-cell[data-level="1"] { background-color: var(--color-l1); }
+    .day-cell[data-level="2"] { background-color: var(--color-l2); }
+    .day-cell[data-level="3"] { background-color: var(--color-l3); }
+    .day-cell[data-level="4"] { background-color: var(--color-l4); }
+
+    .btn-delete {
+      background: transparent;
+      border: none;
+      color: var(--text-sub);
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    .btn-delete:hover {
+      color: #f76841;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>Micro-Habit Visualizer</h1>
+      <div class="theme-selector">
+        <select id="themeSelect">
+          <option value="emerald">Emerald</option>
+          <option value="ocean">Ocean</option>
+          <option value="sunset">Sunset</option>
+          <option value="purple">Purple</option>
+        </select>
+      </div>
+    </header>
+
+    <div class="habit-controls">
+      <input type="text" id="habitInput" placeholder="Add a new micro-habit (e.g., Read 5 pages)...">
+      <button class="btn-add" id="addHabitBtn">Add Habit</button>
+    </div>
+
+    <div id="habitsList"></div>
+  </div>
+
+  <script>
+    // App State
+    let habits = JSON.parse(localStorage.getItem('micro_habits')) || [];
+    let currentTheme = localStorage.getItem('micro_theme') || 'emerald';
+
+    // Elements
+    const habitInput = document.getElementById('habitInput');
+    const addHabitBtn = document.getElementById('addHabitBtn');
+    const habitsList = document.getElementById('habitsList');
+    const themeSelect = document.getElementById('themeSelect');
+
+    // Set Initial Theme
+    document.documentElement.setAttribute('data-theme', currentTheme);
+    themeSelect.value = currentTheme;
+
+    // Save state to Local Storage
+    function saveData() {
+      localStorage.setItem('micro_habits', JSON.stringify(habits));
+    }
+
+    // Change Theme
+    themeSelect.addEventListener('change', (e) => {
+      currentTheme = e.target.value;
+      document.documentElement.setAttribute('data-theme', currentTheme);
+      localStorage.setItem('micro_theme', currentTheme);
+    });
+
+    // Add Habit
+    addHabitBtn.addEventListener('click', () => {
+      const name = habitInput.value.trim();
+      if (!name) return;
+
+      const newHabit = {
+        id: Date.now().toString(),
+        name: name,
+        history: {} // Store date string "YYYY-MM-DD" -> level (0 to 4)
+      };
+
+      habits.push(newHabit);
+      saveData();
+      renderHabits();
+      habitInput.value = '';
+    });
+
+    // Toggle Cell Completion
+    function toggleDay(habitId, dateStr) {
+      const habit = habits.find(h => h.id === habitId);
+      if (!habit) return;
+
+      const currentLevel = habit.history[dateStr] || 0;
+      // Cycle through levels 0 -> 1 -> 2 -> 3 -> 4 -> 0
+      const nextLevel = (currentLevel + 1) % 5;
+
+      if (nextLevel === 0) {
+        delete habit.history[dateStr];
+      } else {
+        habit.history[dateStr] = nextLevel;
+      }
+
+      saveData();
+      renderHabits();
+    }
+
+    // Delete Habit
+    function deleteHabit(habitId) {
+      habits = habits.filter(h => h.id !== habitId);
+      saveData();
+      renderHabits();
+    }
+
+    // Calculate Streaks
+    function calculateStreak(history) {
+      let streak = 0;
+      let today = new Date();
+      
+      for (let i = 0; i < 365; i++) {
+        let d = new Date();
+        d.setDate(today.getDate() - i);
+        let dateStr = d.toISOString().split('T')[0];
+
+        if (history[dateStr] && history[dateStr] > 0) {
+          streak++;
+        } else if (i === 0) {
+          // If today isn't checked off yet, don't break streak from yesterday
+          continue;
+        } else {
+          break;
+        }
+      }
+      return streak;
+    }
+
+    // Render Grid Map (Last 120 Days)
+    function renderGrid(habit) {
+      const grid = document.createElement('div');
+      grid.className = 'contribution-grid';
+
+      const daysToDisplay = 119; // 17 weeks * 7 days
+      const today = new Date();
+
+      for (let i = daysToDisplay; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(today.getDate() - i);
+        const dateStr = d.toISOString().split('T')[0];
+        const level = habit.history[dateStr] || 0;
+
+        const cell = document.createElement('div');
+        cell.className = 'day-cell';
+        cell.setAttribute('data-level', level);
+        cell.title = `${dateStr}: Level ${level}`;
+        cell.addEventListener('click', () => toggleDay(habit.id, dateStr));
+
+        grid.appendChild(cell);
+      }
+
+      return grid;
+    }
+
+    // Render All Habits
+    function renderHabits() {
+      habitsList.innerHTML = '';
+
+      if (habits.length === 0) {
+        habitsList.innerHTML = `<p style="text-align: center; color: var(--text-sub); margin-top: 2rem;">No habits added yet. Start by adding one above!</p>`;
+        return;
+      }
+
+      habits.forEach(habit => {
+        const card = document.createElement('div');
+        card.className = 'habit-card';
+
+        const streak = calculateStreak(habit.history);
+        const totalCompletions = Object.values(habit.history).filter(v => v > 0).length;
+
+        card.innerHTML = `
+          <div class="habit-header">
+            <div>
+              <div class="habit-title">${habit.name}</div>
+              <div class="habit-stats">
+                <span>Streak: <span class="stat-highlight">${streak} days</span></span>
+                <span>Total Active Days: <span class="stat-highlight">${totalCompletions}</span></span>
+              </div>
+            </div>
+            <button class="btn-delete" onclick="deleteHabit('${habit.id}')">Delete</button>
+          </div>
+          <div class="grid-container"></div>
+        `;
+
+        const gridContainer = card.querySelector('.grid-container');
+        gridContainer.appendChild(renderGrid(habit));
+
+        habitsList.appendChild(card);
+      });
+    }
+
+    // Initial Render
+    renderHabits();
+  </script>
+</body>
+</html>
